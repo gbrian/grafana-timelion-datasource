@@ -22,9 +22,8 @@ export class TimelionDatasource {
   }
 
   query(options) {
-    console.log(options);
     var query = this.buildQueryParameters(options);
-    
+    var oThis = this;
     if (query.targets.length <= 0) {
       return this.q.when({data: []});
     }
@@ -32,11 +31,11 @@ export class TimelionDatasource {
         url: this.url + '/run',
         data: options.query,
         method: 'POST'
-      }).then(result => result.data.sheet["0"].list
-            .map((data,ix) => ({
-              "target": query.targets[ix].refId,
-              "datapoints": data.map(d => [d[1],d[2]])
-            })));
+      }).then(response => ({"data": response.data.sheet["0"].list
+            .map((list,ix) => ({
+              "target": list.label,
+              "datapoints": _.map(list.data, d => [d[1],d[0]])
+            }))}));
   }
 
   testDatasource() {
@@ -104,7 +103,7 @@ export class TimelionDatasource {
                         "interval":"auto",
                         "mode":"absolute",
                         "timezone":"GMT",
-                        "to": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ")
+                        "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
                       }
                     };
     //remove placeholder targets
@@ -112,7 +111,10 @@ export class TimelionDatasource {
       return target.target !== 'select metric' && !target.hide;
     });
 
-    queryTpl.sheets = _.map(options.targets, target => this.templateSrv.replace(target.target));
+    queryTpl.sheet = _.map(options.targets, 
+                      target => this.templateSrv
+                            .replace(target.target)
+                            .replace(/\r\n|\r|\n/mg, ""));
     options.query = JSON.stringify(queryTpl);
     return options;
   }

@@ -60,9 +60,8 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "query",
           value: function query(options) {
-            console.log(options);
             var query = this.buildQueryParameters(options);
-
+            var oThis = this;
             if (query.targets.length <= 0) {
               return this.q.when({ data: [] });
             }
@@ -70,15 +69,15 @@ System.register(["lodash"], function (_export, _context) {
               url: this.url + '/run',
               data: options.query,
               method: 'POST'
-            }).then(function (result) {
-              return result.data.sheet["0"].list.map(function (data, ix) {
-                return {
-                  "target": query.targets[ix].refId,
-                  "datapoints": data.map(function (d) {
-                    return [d[1], d[2]];
-                  })
-                };
-              });
+            }).then(function (response) {
+              return { "data": response.data.sheet["0"].list.map(function (list, ix) {
+                  return {
+                    "target": list.label,
+                    "datapoints": _.map(list.data, function (d) {
+                      return [d[1], d[0]];
+                    })
+                  };
+                }) };
             });
           }
         }, {
@@ -154,7 +153,7 @@ System.register(["lodash"], function (_export, _context) {
                 "interval": "auto",
                 "mode": "absolute",
                 "timezone": "GMT",
-                "to": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ")
+                "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
               }
             };
             //remove placeholder targets
@@ -162,8 +161,8 @@ System.register(["lodash"], function (_export, _context) {
               return target.target !== 'select metric' && !target.hide;
             });
 
-            queryTpl.sheets = _.map(options.targets, function (target) {
-              return _this.templateSrv.replace(target.target);
+            queryTpl.sheet = _.map(options.targets, function (target) {
+              return _this.templateSrv.replace(target.target).replace(/\r\n|\r|\n/mg, "");
             });
             options.query = JSON.stringify(queryTpl);
             return options;
