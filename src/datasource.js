@@ -27,15 +27,22 @@ export class TimelionDatasource {
     if (query.targets.length <= 0) {
       return this.q.when({data: []});
     }
-    return this.request({
-        url: this.url + '/run',
-        data: options.query,
-        method: 'POST'
-      }).then(response => ({"data": response.data.sheet["0"].list
+    var reqs = _.map(options.queries, 
+          query => oThis.request({
+            url: this.url + '/run',
+            data: query,
+            method: 'POST'
+          })
+          .then(response => oThis.readTimlionSeries(response)
             .map((list,ix) => ({
               "target": list.label,
               "datapoints": _.map(list.data, d => [d[1],d[0]])
-            }))}));
+          }))));
+    return this.q.all(reqs).then(series => ({"data": _.flatten(series)}))
+  }
+
+  readTimlionSeries(response) {
+    return _.flatten(_.map(response.data.sheet, sheet => sheet.list));
   }
 
   testDatasource() {
@@ -78,11 +85,9 @@ export class TimelionDatasource {
     };
 
     return this.backendSrv.datasourceRequest({
-      url: this.url + '/search',
-      data: interpolated,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    }).then(this.mapToTextValue);
+      url: "https://raw.githubusercontent.com/elastic/timelion/master/FUNCTIONS.md",
+      method: 'GET'
+    }).then(this.parseTimelionFunctions);
   }
 
   mapToTextValue(result) {
@@ -97,6 +102,12 @@ export class TimelionDatasource {
   }
 
   buildQueryParameters(options) {
+    var oThis = this;
+    //remove placeholder targets
+    options.targets = _.filter(options.targets, target => {
+      return target.target !== 'select metric' && !target.hide;
+    });
+
     const queryTpl = {"sheet":null,
                       "time":{
                         "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
@@ -106,16 +117,33 @@ export class TimelionDatasource {
                         "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
                       }
                     };
-    //remove placeholder targets
-    options.targets = _.filter(options.targets, target => {
-      return target.target !== 'select metric' && !target.hide;
+    
+    var targets = _.flatten(_.map(options.targets, target => {
+       var target = oThis.templateSrv
+                        .replace(target.target)
+                        .replace(/\r\n|\r|\n/mg, "");
+      var targets = _.map(target.split(".es(").slice(1), part => ".es(" + part);
+      return _.map(targets, target =>{
+        var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
+        var interval = target.interval || undefined;
+        if(scale_interval) {
+          interval = scale_interval[1];
+          target = target.replace(scale_interval[0], "");
+        }
+        return {target:target, interval:interval};
+      });
+    }));
+    var intervalGroups = _.groupBy(targets, t => t.interval);
+    var intervals = Object.keys(intervalGroups);
+    var queries = _.map(intervals, key => ({
+      interval: key,
+      sheet: _.map(intervalGroups[key], target => target.target)
+    }));
+    options.queries = _.map(queries, q => {
+        queryTpl.sheet = q.sheet;
+        queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto': q.interval;
+        return _.cloneDeep(queryTpl);
     });
-
-    queryTpl.sheet = _.map(options.targets, 
-                      target => this.templateSrv
-                            .replace(target.target)
-                            .replace(/\r\n|\r|\n/mg, ""));
-    options.query = JSON.stringify(queryTpl);
     return options;
   }
 }

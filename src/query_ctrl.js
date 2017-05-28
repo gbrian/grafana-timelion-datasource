@@ -10,6 +10,8 @@ export class TimelionDatasourceQueryCtrl extends QueryCtrl {
     this.uiSegmentSrv = uiSegmentSrv;
     this.target.target = this.target.target || 'select metric';
     this.target.type = this.target.type || 'timeserie';
+    if(typeof(this.target.rawQuery) === 'undefined')
+      this.target.rawQuery = true;
   }
 
   getOptions(query) {

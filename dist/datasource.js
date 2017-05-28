@@ -60,25 +60,39 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "query",
           value: function query(options) {
+            var _this = this;
+
             var query = this.buildQueryParameters(options);
             var oThis = this;
             if (query.targets.length <= 0) {
               return this.q.when({ data: [] });
             }
-            return this.request({
-              url: this.url + '/run',
-              data: options.query,
-              method: 'POST'
-            }).then(function (response) {
-              return { "data": response.data.sheet["0"].list.map(function (list, ix) {
+            var reqs = _.map(options.queries, function (query) {
+              return oThis.request({
+                url: _this.url + '/run',
+                data: query,
+                method: 'POST'
+              }).then(function (response) {
+                return oThis.readTimlionSeries(response).map(function (list, ix) {
                   return {
                     "target": list.label,
                     "datapoints": _.map(list.data, function (d) {
                       return [d[1], d[0]];
                     })
                   };
-                }) };
+                });
+              });
             });
+            return this.q.all(reqs).then(function (series) {
+              return { "data": _.flatten(series) };
+            });
+          }
+        }, {
+          key: "readTimlionSeries",
+          value: function readTimlionSeries(response) {
+            return _.flatten(_.map(response.data.sheet, function (sheet) {
+              return sheet.list;
+            }));
           }
         }, {
           key: "testDatasource",
@@ -124,11 +138,9 @@ System.register(["lodash"], function (_export, _context) {
             };
 
             return this.backendSrv.datasourceRequest({
-              url: this.url + '/search',
-              data: interpolated,
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            }).then(this.mapToTextValue);
+              url: "https://raw.githubusercontent.com/elastic/timelion/master/FUNCTIONS.md",
+              method: 'GET'
+            }).then(this.parseTimelionFunctions);
           }
         }, {
           key: "mapToTextValue",
@@ -145,7 +157,11 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "buildQueryParameters",
           value: function buildQueryParameters(options) {
-            var _this = this;
+            var oThis = this;
+            //remove placeholder targets
+            options.targets = _.filter(options.targets, function (target) {
+              return target.target !== 'select metric' && !target.hide;
+            });
 
             var queryTpl = { "sheet": null,
               "time": {
@@ -156,15 +172,39 @@ System.register(["lodash"], function (_export, _context) {
                 "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
               }
             };
-            //remove placeholder targets
-            options.targets = _.filter(options.targets, function (target) {
-              return target.target !== 'select metric' && !target.hide;
-            });
 
-            queryTpl.sheet = _.map(options.targets, function (target) {
-              return _this.templateSrv.replace(target.target).replace(/\r\n|\r|\n/mg, "");
+            var targets = _.flatten(_.map(options.targets, function (target) {
+              var target = oThis.templateSrv.replace(target.target).replace(/\r\n|\r|\n/mg, "");
+              var targets = _.map(target.split(".es(").slice(1), function (part) {
+                return ".es(" + part;
+              });
+              return _.map(targets, function (target) {
+                var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
+                var interval = target.interval || undefined;
+                if (scale_interval) {
+                  interval = scale_interval[1];
+                  target = target.replace(scale_interval[0], "");
+                }
+                return { target: target, interval: interval };
+              });
+            }));
+            var intervalGroups = _.groupBy(targets, function (t) {
+              return t.interval;
             });
-            options.query = JSON.stringify(queryTpl);
+            var intervals = Object.keys(intervalGroups);
+            var queries = _.map(intervals, function (key) {
+              return {
+                interval: key,
+                sheet: _.map(intervalGroups[key], function (target) {
+                  return target.target;
+                })
+              };
+            });
+            options.queries = _.map(queries, function (q) {
+              queryTpl.sheet = q.sheet;
+              queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto' : q.interval;
+              return _.cloneDeep(queryTpl);
+            });
             return options;
           }
         }]);
