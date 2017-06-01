@@ -29,3 +29,6 @@ Use the `scale_interval()` function to specify metric interval. Grafana templati
 <img src="https://github.com/gbrian/grafana-timelion-datasource/blob/master/doc/preview_ver1.png?raw=true"/>
 
 **have fun!**
+
+## Thanks to
+Grafana team and [@bergquist](https://github.com/bergquist)
