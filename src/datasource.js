@@ -4,7 +4,7 @@ export class TimelionDatasource {
 
   constructor(instanceSettings, $q, backendSrv, templateSrv) {
     this.instanceSettings = instanceSettings;
-    this.esVersion = this.instanceSettings.esVersion  || "5.3.0"
+    this.esVersion = this.instanceSettings.esVersion || "5.3.0"
     this.type = instanceSettings.type;
     this.url = instanceSettings.url;
     this.name = instanceSettings.name;
@@ -13,7 +13,7 @@ export class TimelionDatasource {
     this.templateSrv = templateSrv;
   }
 
-  request(options){
+  request(options) {
     options.headers = {
       "kbn-version": this.esVersion,
       "Content-Type": "application/json;charset=UTF-8"
@@ -25,20 +25,20 @@ export class TimelionDatasource {
     var query = this.buildQueryParameters(options);
     var oThis = this;
     if (query.targets.length <= 0) {
-      return this.q.when({data: []});
+      return this.q.when({ data: [] });
     }
-    var reqs = _.map(options.queries, 
-          query => oThis.request({
-            url: this.url + '/run',
-            data: query,
-            method: 'POST'
-          })
-          .then(response => oThis.readTimlionSeries(response)
-            .map((list,ix) => ({
-              "target": list.label,
-              "datapoints": _.map(list.data, d => [d[1],d[0]])
+    var reqs = _.map(options.queries,
+      query => oThis.request({
+        url: this.url + '/run',
+        data: query,
+        method: 'POST'
+      })
+        .then(response => oThis.readTimlionSeries(response)
+          .map((list, ix) => ({
+            "target": list.label,
+            "datapoints": _.map(list.data, d => [d[1], d[0]])
           }))));
-    return this.q.all(reqs).then(series => ({"data": _.flatten(series)}))
+    return this.q.all(reqs).then(series => ({ "data": _.flatten(series) }))
   }
 
   readTimlionSeries(response) {
@@ -95,7 +95,7 @@ export class TimelionDatasource {
       if (d && d.text && d.value) {
         return { text: d.text, value: d.value };
       } else if (_.isObject(d)) {
-        return { text: d, value: i};
+        return { text: d, value: i };
       }
       return { text: d, value: d };
     });
@@ -108,29 +108,43 @@ export class TimelionDatasource {
       return target.target !== 'select metric' && !target.hide;
     });
 
-    const queryTpl = {"sheet":null,
-                      "time":{
-                        "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
-                        "interval":"auto",
-                        "mode":"absolute",
-                        "timezone":"GMT",
-                        "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
-                      }
-                    };
-    
+    const queryTpl = {
+      "sheet": null,
+      "time": {
+        "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
+        "interval": "auto",
+        "mode": "absolute",
+        "timezone": "GMT",
+        "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
+      }
+    };
+    var splitTarget = function (target) {
+      var re = /^\s*\.es\(|\s*,\s*\.es\(/mg,
+        m,
+        matches = [],
+        series = [];
+      while (m = re.exec(target))
+        matches.push(m);
+      matches.reverse()
+        .map(m => {
+          series.push(target.substring(m.index).trim());
+          target = target.substring(0, m.index);
+        });
+      return series.map(s => s[0] === ',' ? s.substring(1) : s);
+    };
     var targets = _.flatten(_.map(options.targets, target => {
-       var target = oThis.templateSrv
-                        .replace(target.target)
-                        .replace(/\r\n|\r|\n/mg, "");
-      var targets = _.map(target.split(".es(").slice(1), part => ".es(" + part);
-      return _.map(targets, target =>{
+      var target = oThis.templateSrv
+        .replace(target.target)
+        .replace(/\r\n|\r|\n/mg, "");
+      var targets = splitTarget(target);
+      return _.map(targets, target => {
         var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
         var interval = target.interval || undefined;
-        if(scale_interval) {
+        if (scale_interval) {
           interval = scale_interval[1];
           target = target.replace(scale_interval[0], "");
         }
-        return {target:target, interval:interval};
+        return { target: target, interval: interval };
       });
     }));
     var intervalGroups = _.groupBy(targets, t => t.interval);
@@ -140,9 +154,9 @@ export class TimelionDatasource {
       sheet: _.map(intervalGroups[key], target => target.target)
     }));
     options.queries = _.map(queries, q => {
-        queryTpl.sheet = q.sheet;
-        queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto': q.interval;
-        return _.cloneDeep(queryTpl);
+      queryTpl.sheet = q.sheet;
+      queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto' : q.interval;
+      return _.cloneDeep(queryTpl);
     });
     return options;
   }

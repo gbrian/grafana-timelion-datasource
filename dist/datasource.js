@@ -163,7 +163,8 @@ System.register(["lodash"], function (_export, _context) {
               return target.target !== 'select metric' && !target.hide;
             });
 
-            var queryTpl = { "sheet": null,
+            var queryTpl = {
+              "sheet": null,
               "time": {
                 "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
                 "interval": "auto",
@@ -172,12 +173,24 @@ System.register(["lodash"], function (_export, _context) {
                 "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
               }
             };
-
+            var splitTarget = function splitTarget(target) {
+              var re = /^\s*\.es\(|\s*,\s*\.es\(/mg,
+                  m,
+                  matches = [],
+                  series = [];
+              while (m = re.exec(target)) {
+                matches.push(m);
+              }matches.reverse().map(function (m) {
+                series.push(target.substring(m.index).trim());
+                target = target.substring(0, m.index);
+              });
+              return series.map(function (s) {
+                return s[0] === ',' ? s.substring(1) : s;
+              });
+            };
             var targets = _.flatten(_.map(options.targets, function (target) {
               var target = oThis.templateSrv.replace(target.target).replace(/\r\n|\r|\n/mg, "");
-              var targets = _.map(target.split(".es(").slice(1), function (part) {
-                return ".es(" + part;
-              });
+              var targets = splitTarget(target);
               return _.map(targets, function (target) {
                 var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
                 var interval = target.interval || undefined;
@@ -216,4 +229,3 @@ System.register(["lodash"], function (_export, _context) {
     }
   };
 });
-//# sourceMappingURL=datasource.js.map

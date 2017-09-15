@@ -48,4 +48,3 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
     }
   };
 });
-//# sourceMappingURL=module.js.map
