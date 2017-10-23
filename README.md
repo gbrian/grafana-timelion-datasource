@@ -5,7 +5,7 @@ ELK Timelion's data source for Grafana
 
 ## Setup
 
-Set the url for your ES server like: http://server:posrt/api/timelion
+Set the url for your ES server like: http://server:port/api/timelion (Same server where your Kibana instance is running)
 
 ## Features
 ### Query
