@@ -81,7 +81,7 @@ export class TimelionDatasource {
 
   metricFindQuery(query) {
     var interpolated = {
-      target: this.templateSrv.replace(query, null, 'regex')
+      target: this.templateSrv.replace(query, null, 'lucene')
     };
 
     return this.backendSrv.datasourceRequest({
