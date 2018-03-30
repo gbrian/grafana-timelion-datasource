@@ -132,10 +132,14 @@ export class TimelionDatasource {
         });
       return series.map(s => s[0] === ',' ? s.substring(1) : s);
     };
+    var expandTemplate = function(target){
+      return oThis.templateSrv
+            .replace(target)
+            .replace(/\r\n|\r|\n/mg, "")
+            .trim();
+    };
     var targets = _.flatten(_.map(options.targets, target => {
-      var target = oThis.templateSrv
-        .replace(target.target)
-        .replace(/\r\n|\r|\n/mg, "");
+      var target = expandTemplate(target.target);
       var targets = splitTarget(target);
       return _.map(targets, target => {
         var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
@@ -147,11 +151,14 @@ export class TimelionDatasource {
         return { target: target, interval: interval };
       });
     }));
+    var variables = _.filter(_.map(options.targets, t => expandTemplate(t.target)),
+                                  t => t.indexOf("$") == 0)
+                      .join(",");
     var intervalGroups = _.groupBy(targets, t => t.interval);
     var intervals = Object.keys(intervalGroups);
     var queries = _.map(intervals, key => ({
       interval: key,
-      sheet: _.map(intervalGroups[key], target => target.target)
+      sheet: _.map(intervalGroups[key], target => [variables, target.target].join(","))
     }));
     options.queries = _.map(queries, q => {
       queryTpl.sheet = q.sheet;
