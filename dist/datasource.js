@@ -173,40 +173,22 @@ System.register(["lodash"], function (_export, _context) {
                 "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
               }
             };
-            var splitTarget = function splitTarget(target) {
-              var re = /^\s*\.es\(|\s*,\s*\.es\(/mg,
-                  m,
-                  matches = [],
-                  series = [];
-              while (m = re.exec(target)) {
-                matches.push(m);
-              }matches.reverse().map(function (m) {
-                series.push(target.substring(m.index).trim());
-                target = target.substring(0, m.index);
-              });
-              return series.map(function (s) {
-                return s[0] === ',' ? s.substring(1) : s;
-              });
-            };
             var expandTemplate = function(target){
               return oThis.templateSrv
                     .replace(target)
                     .replace(/\r\n|\r|\n/mg, "")
                     .trim();
             };
-            var targets = _.flatten(_.map(options.targets, target => {
+            var targets = _.map(options.targets, target => {
               var target = expandTemplate(target.target);
-              var targets = splitTarget(target);
-              return _.map(targets, target => {
-                var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
-                var interval = target.interval || undefined;
-                if (scale_interval) {
-                  interval = scale_interval[1];
-                  target = target.replace(scale_interval[0], "");
-                }
-                return { target: target, interval: interval };
-              });
-            }));
+              var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
+              var interval = target.interval || undefined;
+              if (scale_interval) {
+                interval = scale_interval[1];
+                target = target.replace(scale_interval[0], "");
+              }
+              return { target: target, interval: interval };
+            });
             var variables = _.filter(_.map(options.targets, t => expandTemplate(t.target)),
                                           t => t.indexOf("$") == 0)
                               .join(",");
