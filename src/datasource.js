@@ -138,19 +138,16 @@ export class TimelionDatasource {
             .replace(/\r\n|\r|\n/mg, "")
             .trim();
     };
-    var targets = _.flatten(_.map(options.targets, target => {
+    var targets = _.map(options.targets, target => {
       var target = expandTemplate(target.target);
-      var targets = splitTarget(target);
-      return _.map(targets, target => {
-        var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
-        var interval = target.interval || undefined;
-        if (scale_interval) {
-          interval = scale_interval[1];
-          target = target.replace(scale_interval[0], "");
-        }
-        return { target: target, interval: interval };
-      });
-    }));
+      var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
+      var interval = target.interval || undefined;
+      if (scale_interval) {
+        interval = scale_interval[1];
+        target = target.replace(scale_interval[0], "");
+      }
+      return { target: target, interval: interval };
+    });
     var variables = _.filter(_.map(options.targets, t => expandTemplate(t.target)),
                                   t => t.indexOf("$") == 0)
                       .join(",");
