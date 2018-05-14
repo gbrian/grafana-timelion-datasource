@@ -35,7 +35,7 @@ System.register(["lodash"], function (_export, _context) {
       }();
 
       _export("TimelionDatasource", TimelionDatasource = function () {
-        function TimelionDatasource(instanceSettings, $q, backendSrv, templateSrv) {
+        function TimelionDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
           _classCallCheck(this, TimelionDatasource);
 
           this.instanceSettings = instanceSettings;
@@ -46,6 +46,7 @@ System.register(["lodash"], function (_export, _context) {
           this.q = $q;
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
+          this.timeSrv = timeSrv;
         }
 
         _createClass(TimelionDatasource, [{
@@ -136,11 +137,13 @@ System.register(["lodash"], function (_export, _context) {
             var interpolated = {
               target: this.templateSrv.replace(query, null, 'regex')
             };
-
-            return this.backendSrv.datasourceRequest({
-              url: "https://raw.githubusercontent.com/elastic/timelion/master/FUNCTIONS.md",
-              method: 'GET'
-            }).then(this.parseTimelionFunctions);
+            return this["query"]({
+                targets:[interpolated],
+                range:this.timeSrv.timeRange(),
+                scopedVars:{}})
+                .then(series => {
+                  return _.map(series.data, d => ({text:d.target}));
+                });
           }
         }, {
           key: "mapToTextValue",
@@ -174,8 +177,10 @@ System.register(["lodash"], function (_export, _context) {
               }
             };
             var expandTemplate = function(target){
+              _.map(Object.keys(options.scopedVars), key =>
+                   target = target.replace("$"+key, options.scopedVars[key].value));
               return oThis.templateSrv
-                    .replace(target)
+                    .replace(target, true)
                     .replace(/\r\n|\r|\n/mg, "")
                     .trim();
             };
@@ -196,7 +201,9 @@ System.register(["lodash"], function (_export, _context) {
             var intervals = Object.keys(intervalGroups);
             var queries = _.map(intervals, key => ({
               interval: key,
-              sheet: _.map(intervalGroups[key], target => [variables, target.target].join(","))
+              sheet: _.map(intervalGroups[key], target => (variables && variables.length) ?
+                                                            [variables, target.target].join(","):
+                                                            target.target)
             }));
             options.queries = _.map(queries, function (q) {
               queryTpl.sheet = q.sheet;

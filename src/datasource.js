@@ -2,7 +2,7 @@ import _ from "lodash";
 
 export class TimelionDatasource {
 
-  constructor(instanceSettings, $q, backendSrv, templateSrv) {
+  constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
     this.instanceSettings = instanceSettings;
     this.esVersion = this.instanceSettings.esVersion || "5.3.0"
     this.type = instanceSettings.type;
@@ -11,6 +11,7 @@ export class TimelionDatasource {
     this.q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
+    this.timeSrv = timeSrv;
   }
 
   request(options) {
@@ -83,11 +84,13 @@ export class TimelionDatasource {
     var interpolated = {
       target: this.templateSrv.replace(query, null, 'regex')
     };
-
-    return this.backendSrv.datasourceRequest({
-      url: "https://raw.githubusercontent.com/elastic/timelion/master/FUNCTIONS.md",
-      method: 'GET'
-    }).then(this.parseTimelionFunctions);
+    return this["query"]({
+        targets:[interpolated],
+        range:this.timeSrv.timeRange(),
+        scopedVars:{}})
+        .then(series => {
+          return _.map(series.data, d => ({text:d.target}));
+        });
   }
 
   mapToTextValue(result) {
@@ -118,23 +121,11 @@ export class TimelionDatasource {
         "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
       }
     };
-    var splitTarget = function (target) {
-      var re = /^\s*\.es\(|\s*,\s*\.es\(/mg,
-        m,
-        matches = [],
-        series = [];
-      while (m = re.exec(target))
-        matches.push(m);
-      matches.reverse()
-        .map(m => {
-          series.push(target.substring(m.index).trim());
-          target = target.substring(0, m.index);
-        });
-      return series.map(s => s[0] === ',' ? s.substring(1) : s);
-    };
     var expandTemplate = function(target){
+      _.map(Object.keys(options.scopedVars), key =>
+                   target = target.replace("$"+key, options.scopedVars[key].value));
       return oThis.templateSrv
-            .replace(target)
+            .replace(target, true)
             .replace(/\r\n|\r|\n/mg, "")
             .trim();
     };
@@ -155,7 +146,9 @@ export class TimelionDatasource {
     var intervals = Object.keys(intervalGroups);
     var queries = _.map(intervals, key => ({
       interval: key,
-      sheet: _.map(intervalGroups[key], target => [variables, target.target].join(","))
+      sheet: _.map(intervalGroups[key], target => (variables && variables.length) ?
+                                                            [variables, target.target].join(","):
+                                                            target.target)
     }));
     options.queries = _.map(queries, q => {
       queryTpl.sheet = q.sheet;
