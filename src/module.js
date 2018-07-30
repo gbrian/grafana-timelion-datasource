@@ -1,7 +1,13 @@
 import {TimelionDatasource} from './datasource';
 import {TimelionDatasourceQueryCtrl} from './query_ctrl';
 
-class TimelionConfigCtrl {}
+class TimelionConfigCtrl {
+  constructor($scope, datasourceSrv) {
+    this.datasourceSrv = datasourceSrv;
+    this.current.jsonData = this.current.jsonData || {};
+    this.current.jsonData.esVersion = this.current.jsonData.esVersion || '5.3.0';
+  }
+}
 TimelionConfigCtrl.templateUrl = 'partials/config.html';
 
 class GenericQueryOptionsCtrl {}

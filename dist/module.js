@@ -18,8 +18,12 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
       TimelionDatasourceQueryCtrl = _query_ctrl.TimelionDatasourceQueryCtrl;
     }],
     execute: function () {
-      _export('ConfigCtrl', TimelionConfigCtrl = function TimelionConfigCtrl() {
+      _export('ConfigCtrl', TimelionConfigCtrl = function TimelionConfigCtrl($scope, datasourceSrv) {
         _classCallCheck(this, TimelionConfigCtrl);
+
+        this.datasourceSrv = datasourceSrv;
+        this.current.jsonData = this.current.jsonData || {};
+        this.current.jsonData.esVersion = this.current.jsonData.esVersion || '5.3.0';
       });
 
       TimelionConfigCtrl.templateUrl = 'partials/config.html';
@@ -48,3 +52,4 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
     }
   };
 });
+//# sourceMappingURL=module.js.map

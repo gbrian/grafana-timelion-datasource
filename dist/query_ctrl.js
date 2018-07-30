@@ -101,3 +101,4 @@ System.register(['app/plugins/sdk', './css/query-editor.css!'], function (_expor
     }
   };
 });
+//# sourceMappingURL=query_ctrl.js.map
