@@ -184,11 +184,11 @@ System.register(["lodash"], function (_export, _context) {
             var queryTpl = {
               "sheet": null,
               "time": {
-                "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
+                "from": options.range.from.utc().format("YYYY-MM-DDTHH:mm:ss\\Z"),
                 "interval": "auto",
                 "mode": "absolute",
                 "timezone": "GMT",
-                "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
+                "to": options.range.to.utc().format("YYYY-MM-DDTHH:mm:ss\\Z")
               }
             };
             var expandTemplate = function expandTemplate(target) {
