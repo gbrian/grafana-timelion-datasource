@@ -38,8 +38,9 @@ System.register(["lodash"], function (_export, _context) {
         function TimelionDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
           _classCallCheck(this, TimelionDatasource);
 
+          instanceSettings.jsonData = instanceSettings.jsonData || {};
           this.instanceSettings = instanceSettings;
-          this.esVersion = this.instanceSettings.esVersion || "5.3.0";
+          this.esVersion = instanceSettings.jsonData.esVersion || "5.3.0";
           this.type = instanceSettings.type;
           this.url = instanceSettings.url;
           this.name = instanceSettings.name;
@@ -98,12 +99,25 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "testDatasource",
           value: function testDatasource() {
-            return this.backendSrv.datasourceRequest({
+            var testQuery = {
+              "sheet": [".es(*)"],
+              "time": {
+                "from": "now-1m",
+                "to": "now",
+                "mode": "quick",
+                "interval": "auto",
+                "timezone": "Europe/Berlin"
+              }
+            };
+            return this.request({
               url: this.url + '/run',
-              method: 'GET'
+              method: 'POST',
+              data: testQuery
             }).then(function (response) {
-              if (response.status === 400) {
+              if (response.status === 200) {
                 return { status: "success", message: "Data source is working", title: "Success" };
+              } else {
+                return { status: "error", message: response.body, title: "Error " + response.status };
               }
             });
           }
@@ -138,12 +152,13 @@ System.register(["lodash"], function (_export, _context) {
               target: this.templateSrv.replace(query, null, 'regex')
             };
             return this["query"]({
-                targets:[interpolated],
-                range:this.timeSrv.timeRange(),
-                scopedVars:{}})
-                .then(series => {
-                  return _.map(series.data, d => ({text:d.target}));
-                });
+              targets: [interpolated],
+              range: this.timeSrv.timeRange(),
+              scopedVars: {} }).then(function (series) {
+              return _.map(series.data, function (d) {
+                return { text: d.target };
+              });
+            });
           }
         }, {
           key: "mapToTextValue",
@@ -169,22 +184,20 @@ System.register(["lodash"], function (_export, _context) {
             var queryTpl = {
               "sheet": null,
               "time": {
-                "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
+                "from": options.range.from.utc().format("YYYY-MM-DDTHH:mm:ss\\Z"),
                 "interval": "auto",
                 "mode": "absolute",
                 "timezone": "GMT",
-                "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
+                "to": options.range.to.utc().format("YYYY-MM-DDTHH:mm:ss\\Z")
               }
             };
-            var expandTemplate = function(target){
-              _.map(Object.keys(options.scopedVars), key =>
-                   target = target.replace("$"+key, options.scopedVars[key].value));
-              return oThis.templateSrv
-                    .replace(target, true)
-                    .replace(/\r\n|\r|\n/mg, "")
-                    .trim();
+            var expandTemplate = function expandTemplate(target) {
+              _.map(Object.keys(options.scopedVars), function (key) {
+                return target = target.replace("$" + key, options.scopedVars[key].value);
+              });
+              return oThis.templateSrv.replace(target, true).replace(/\r\n|\r|\n/mg, "").trim();
             };
-            var targets = _.map(options.targets, target => {
+            var targets = _.map(options.targets, function (target) {
               var target = expandTemplate(target.target);
               var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
               var interval = target.interval || undefined;
@@ -194,17 +207,23 @@ System.register(["lodash"], function (_export, _context) {
               }
               return { target: target, interval: interval };
             });
-            var variables = _.filter(_.map(options.targets, t => expandTemplate(t.target)),
-                                          t => t.indexOf("$") == 0)
-                              .join(",");
-            var intervalGroups = _.groupBy(targets, t => t.interval);
+            var variables = _.filter(_.map(options.targets, function (t) {
+              return expandTemplate(t.target);
+            }), function (t) {
+              return t.indexOf("$") == 0;
+            }).join(",");
+            var intervalGroups = _.groupBy(targets, function (t) {
+              return t.interval;
+            });
             var intervals = Object.keys(intervalGroups);
-            var queries = _.map(intervals, key => ({
-              interval: key,
-              sheet: _.map(intervalGroups[key], target => (variables && variables.length) ?
-                                                            [variables, target.target].join(","):
-                                                            target.target)
-            }));
+            var queries = _.map(intervals, function (key) {
+              return {
+                interval: key,
+                sheet: _.map(intervalGroups[key], function (target) {
+                  return variables && variables.length ? [variables, target.target].join(",") : target.target;
+                })
+              };
+            });
             options.queries = _.map(queries, function (q) {
               queryTpl.sheet = q.sheet;
               queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto' : q.interval;
@@ -221,3 +240,4 @@ System.register(["lodash"], function (_export, _context) {
     }
   };
 });
+//# sourceMappingURL=datasource.js.map

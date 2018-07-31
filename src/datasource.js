@@ -3,8 +3,9 @@ import _ from "lodash";
 export class TimelionDatasource {
 
   constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
+    instanceSettings.jsonData = instanceSettings.jsonData || {};
     this.instanceSettings = instanceSettings;
-    this.esVersion = this.instanceSettings.esVersion || "5.3.0"
+    this.esVersion = instanceSettings.jsonData.esVersion || "5.3.0";
     this.type = instanceSettings.type;
     this.url = instanceSettings.url;
     this.name = instanceSettings.name;
@@ -47,12 +48,25 @@ export class TimelionDatasource {
   }
 
   testDatasource() {
-    return this.backendSrv.datasourceRequest({
+    var testQuery = {
+                "sheet":[".es(*)"],
+                "time":{
+                  "from":"now-1m",
+                  "to":"now",
+                  "mode":"quick",
+                  "interval":"auto",
+                  "timezone":"Europe/Berlin"
+                  }
+                };
+    return this.request({
       url: this.url + '/run',
-      method: 'GET'
+      method: 'POST',
+      data:testQuery
     }).then(response => {
-      if (response.status === 400) {
+      if (response.status === 200) {
         return { status: "success", message: "Data source is working", title: "Success" };
+      }else{
+        return { status: "error", message: response.body, title: `Error ${response.status}` };
       }
     });
   }
@@ -82,7 +96,7 @@ export class TimelionDatasource {
 
   metricFindQuery(query) {
     var interpolated = {
-      target: this.templateSrv.replace(query, null, 'lucene')
+      target: this.templateSrv.replace(query, null, 'regex')
     };
     return this["query"]({
         targets:[interpolated],
@@ -114,11 +128,11 @@ export class TimelionDatasource {
     const queryTpl = {
       "sheet": null,
       "time": {
-        "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
+        "from": options.range.from.utc().format("YYYY-MM-DDTHH:mm:ss\\Z"),
         "interval": "auto",
         "mode": "absolute",
         "timezone": "GMT",
-        "to": options.range.to.format("YYYY-MM-DDTHH:mm:ss ZZ")
+        "to": options.range.to.utc().format("YYYY-MM-DDTHH:mm:ss\\Z")
       }
     };
     var expandTemplate = function(target){
