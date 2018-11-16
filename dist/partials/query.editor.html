@@ -1,17 +1,20 @@
 <query-editor-row query-ctrl="ctrl" class="generic-datasource-query-row" has-text-edit-mode="true">
-  <div class="gf-form-inline">
-    <div class="gf-form gf-form--grow" ng-if="ctrl.target.rawQuery">
-      <textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
-    </div>
-  </div>
+	<div class="gf-form-inline">
+		<div class="gf-form gf-form--grow" ng-if="ctrl.target.rawQuery">
+			<textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" spellcheck="false" ng-blur="ctrl.onChangeInternal()"></textarea>
+		</div>
+	</div>
 
 	<div class="gf-form-inline">
 		<div class="gf-form" ng-if="!ctrl.target.rawQuery">
-			<metric-segment-model property="ctrl.target.target" get-options="ctrl.getOptions($query)" on-change="ctrl.onChangeInternal()" css-class="tight-form-item-xxlarge">
+			<metric-segment-model property="ctrl.target.target" get-options="ctrl.getOptions($query)" on-change="ctrl.onChangeInternal()"
+			 css-class="tight-form-item-xxlarge">
 			</metric-segment-model>
 		</div>
-		<div class="gf-form gf-form--grow">
-			<div class="gf-form-label gf-form-label--grow"></div>
-		</div>
-  </div>
+	</div>
+	<div class="gf-form">
+		<label class="gf-form-label">Interval</label>
+		<input type="text" class="gf-form-input max-width-8 ng-pristine ng-untouched ng-valid ng-empty ng-valid-integer" 
+				placeholder="auto" empty-to-null="" ng-model="ctrl.target.interval" ng-blur="ctrl.onChangeInternal()">
+	</div>
 </query-editor-row>

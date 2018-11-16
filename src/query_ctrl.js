@@ -8,9 +8,10 @@ export class TimelionDatasourceQueryCtrl extends QueryCtrl {
 
     this.scope = $scope;
     this.uiSegmentSrv = uiSegmentSrv;
-    this.target.target = this.target.target || 'select metric';
+    this.target.target = this.target.target || '.es(*)';
     this.target.type = this.target.type || 'timeserie';
-    if(typeof(this.target.rawQuery) === 'undefined')
+    this.target.interval = this.target.interval || undefined;
+    if(this.target.rawQuery === undefined)
       this.target.rawQuery = true;
   }
 
