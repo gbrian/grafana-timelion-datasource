@@ -49,23 +49,23 @@ export class TimelionDatasource {
 
   testDatasource() {
     var testQuery = {
-                "sheet":[".es(*)"],
-                "time":{
-                  "from":"now-1m",
-                  "to":"now",
-                  "mode":"quick",
-                  "interval":"auto",
-                  "timezone":"Europe/Berlin"
-                  }
-                };
+      "sheet": [".es(*)"],
+      "time": {
+        "from": "now-1m",
+        "to": "now",
+        "mode": "quick",
+        "interval": "auto",
+        "timezone": "Europe/Berlin"
+      }
+    };
     return this.request({
       url: this.url + '/run',
       method: 'POST',
-      data:testQuery
+      data: testQuery
     }).then(response => {
       if (response.status === 200) {
         return { status: "success", message: "Data source is working", title: "Success" };
-      }else{
+      } else {
         return { status: "error", message: response.body, title: `Error ${response.status}` };
       }
     });
@@ -99,12 +99,13 @@ export class TimelionDatasource {
       target: this.templateSrv.replace(query, null, 'regex')
     };
     return this["query"]({
-        targets:[interpolated],
-        range:this.timeSrv.timeRange(),
-        scopedVars:{}})
-        .then(series => {
-          return _.map(series.data, d => ({text:d.target}));
-        });
+      targets: [interpolated],
+      range: this.timeSrv.timeRange(),
+      scopedVars: {}
+    })
+      .then(series => {
+        return _.map(series.data, d => ({ text: d.target }));
+      });
   }
 
   mapToTextValue(result) {
@@ -135,34 +136,30 @@ export class TimelionDatasource {
         "to": options.range.to.utc().format("YYYY-MM-DDTHH:mm:ss\\Z")
       }
     };
-    var expandTemplate = function(target){
+    var expandTemplate = function (target) {
       _.map(Object.keys(options.scopedVars), key =>
-                   target = target.replace("$"+key, options.scopedVars[key].value));
+        target = target.replace("$" + key, options.scopedVars[key].value));
       return oThis.templateSrv
-            .replace(target, true)
-            .replace(/\r\n|\r|\n/mg, "")
-            .trim();
+        .replace(target, true)
+        .replace(/\r\n|\r|\n/mg, "")
+        .trim();
     };
     var targets = _.map(options.targets, target => {
-      var target = expandTemplate(target.target);
-      var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
-      var interval = target.interval || undefined;
-      if (scale_interval) {
-        interval = scale_interval[1];
-        target = target.replace(scale_interval[0], "");
-      }
-      return { target: target, interval: interval };
+      return {
+        target: expandTemplate(target.target),
+        interval: expandTemplate(target.interval || "auto")
+      };
     });
     var variables = _.filter(_.map(options.targets, t => expandTemplate(t.target)),
-                                  t => t.indexOf("$") == 0)
-                      .join(",");
+      t => t.indexOf("$") == 0)
+      .join(",");
     var intervalGroups = _.groupBy(targets, t => t.interval);
     var intervals = Object.keys(intervalGroups);
     var queries = _.map(intervals, key => ({
       interval: key,
       sheet: _.map(intervalGroups[key], target => (variables && variables.length) ?
-                                                            [variables, target.target].join(","):
-                                                            target.target)
+        [variables, target.target].join(",") :
+        target.target)
     }));
     options.queries = _.map(queries, q => {
       queryTpl.sheet = q.sheet;

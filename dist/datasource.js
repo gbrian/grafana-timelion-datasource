@@ -154,7 +154,8 @@ System.register(["lodash"], function (_export, _context) {
             return this["query"]({
               targets: [interpolated],
               range: this.timeSrv.timeRange(),
-              scopedVars: {} }).then(function (series) {
+              scopedVars: {}
+            }).then(function (series) {
               return _.map(series.data, function (d) {
                 return { text: d.target };
               });
@@ -198,14 +199,10 @@ System.register(["lodash"], function (_export, _context) {
               return oThis.templateSrv.replace(target, true).replace(/\r\n|\r|\n/mg, "").trim();
             };
             var targets = _.map(options.targets, function (target) {
-              var target = expandTemplate(target.target);
-              var scale_interval = /.scale_interval\(([^\)]*)\)/.exec(target);
-              var interval = target.interval || undefined;
-              if (scale_interval) {
-                interval = scale_interval[1];
-                target = target.replace(scale_interval[0], "");
-              }
-              return { target: target, interval: interval };
+              return {
+                target: expandTemplate(target.target),
+                interval: expandTemplate(target.interval || "auto")
+              };
             });
             var variables = _.filter(_.map(options.targets, function (t) {
               return expandTemplate(t.target);

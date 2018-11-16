@@ -68,9 +68,10 @@ System.register(['app/plugins/sdk', './css/query-editor.css!'], function (_expor
 
           _this.scope = $scope;
           _this.uiSegmentSrv = uiSegmentSrv;
-          _this.target.target = _this.target.target || 'select metric';
+          _this.target.target = _this.target.target || '.es(*)';
           _this.target.type = _this.target.type || 'timeserie';
-          if (typeof _this.target.rawQuery === 'undefined') _this.target.rawQuery = true;
+          _this.target.interval = _this.target.interval || undefined;
+          if (_this.target.rawQuery === undefined) _this.target.rawQuery = true;
           return _this;
         }
 
