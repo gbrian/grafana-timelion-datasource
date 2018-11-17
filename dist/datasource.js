@@ -124,26 +124,60 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "annotationQuery",
           value: function annotationQuery(options) {
-            var query = this.templateSrv.replace(options.annotation.query, {}, 'glob');
-            var annotationQuery = {
-              range: options.range,
-              annotation: {
-                name: options.annotation.name,
-                datasource: options.annotation.datasource,
-                enable: options.annotation.enable,
-                iconColor: options.annotation.iconColor,
-                query: query
-              },
-              rangeRaw: options.rangeRaw
-            };
+            var _this2 = this;
 
-            return this.backendSrv.datasourceRequest({
-              url: this.url + '/annotations',
-              method: 'POST',
-              data: annotationQuery
-            }).then(function (result) {
-              return result.data;
+            options.targets = [{ target: options.annotation.query }];
+            options.scopedVars = {};
+            var novalue = parseFloat(options.annotation.novalue || 0);
+            return this.query(options).then(function (result) {
+              return _this2.createAnnotations(options, _.reduce(_.map(result.data, function (d) {
+                return _.map(_.filter(d.datapoints, function (d) {
+                  return d[0] !== novalue;
+                }), function (dp) {
+                  return {
+                    target: d.target + ": " + dp[0],
+                    timestamp: dp[1]
+                  };
+                });
+              }), function (acc, v) {
+                return acc.concat(v);
+              }, []));
             });
+          }
+        }, {
+          key: "annotationReplace",
+          value: function annotationReplace(text, match) {
+            if (!text || !match) return text;
+            for (var s in match) {
+              text = text.replace(new RegExp("\\$" + s, 'g'), match[s]);
+            }
+            return this.templateSrv.replace(text, null, 'regex');
+          }
+        }, {
+          key: "annotationInfo",
+          value: function annotationInfo(options, result) {
+            var m = options.regexp ? new RegExp(options.regexp).exec(result.target) : [];
+            return {
+              "title": this.annotationReplace(options.title, m),
+              "time": result.timestamp,
+              "text": this.annotationReplace(options.text, m),
+              "tags": this.annotationReplace(options.tags, m)
+            };
+          }
+        }, {
+          key: "createAnnotations",
+          value: function createAnnotations(options, queryResult) {
+            var _this3 = this;
+
+            var res = _.map(queryResult, function (r) {
+              return Object.assign({
+                "annotation": {
+                  "name": options.annotation.name,
+                  "enabled": options.annotation.enable,
+                  "datasource": "Timelion"
+                } }, _this3.annotationInfo(options.annotation, r));
+            });
+            return res;
           }
         }, {
           key: "metricFindQuery",

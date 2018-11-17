@@ -32,6 +32,17 @@ Starting with version 1.0.1 you can retrieve variables from Timelion labels.
 
 ![labels](doc/variables_1.PNG)
 
+### Annotations
+You can query annotattions using Timelio as follow:
+
+![Annotations](src/img/annotations.png)
+
+Notes:
+ * Data will be returned a `<label>: <value>` example `q* > host > count: 10`
+ * Define a regexp to split label and use capture groups for: title, description,  tags
+ * Timelion always returns a data point for each tick in the time range. Use `Ignore value` to discard invalid values. Default value is 0. 
+
+
 ### Screenshot
 ![labels](doc/preview_ver1.png)
 

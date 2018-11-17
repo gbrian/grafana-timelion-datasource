@@ -72,26 +72,53 @@ export class TimelionDatasource {
   }
 
   annotationQuery(options) {
-    var query = this.templateSrv.replace(options.annotation.query, {}, 'glob');
-    var annotationQuery = {
-      range: options.range,
-      annotation: {
-        name: options.annotation.name,
-        datasource: options.annotation.datasource,
-        enable: options.annotation.enable,
-        iconColor: options.annotation.iconColor,
-        query: query
-      },
-      rangeRaw: options.rangeRaw
-    };
+    options.targets = [{ target: options.annotation.query }];
+    options.scopedVars = {};
+    var novalue = parseFloat(options.annotation.novalue||0);
+    return this.query(options)
+      .then(result => this.createAnnotations(options,
+        _.reduce(
+          _.map(result.data, d =>
+            _.map(_.filter(d.datapoints, dd => dd[0] !== novalue), dp =>
+              ({
+                target: `${d.target}: ${dp[0]}`,
+                timestamp: dp[1]
+              }))
+          )
+          , (acc, v) => acc.concat(v), [])
+      )
+    );
+  }
 
-    return this.backendSrv.datasourceRequest({
-      url: this.url + '/annotations',
-      method: 'POST',
-      data: annotationQuery
-    }).then(result => {
-      return result.data;
-    });
+  annotationReplace(text, match){
+    if(!text || !match) return text;
+    for(var s in match){
+      text = text.replace(new RegExp(`\\$${s}`, 'g'), match[s]);
+    }
+    return this.templateSrv.replace(text, null, 'regex');
+  }
+
+  annotationInfo(options, result) {
+    var m = options.regexp ? new RegExp(options.regexp).exec(result.target):
+            [];
+    return {
+      "title": this.annotationReplace(options.title, m),
+      "time": result.timestamp,
+      "text": this.annotationReplace(options.text, m),
+      "tags": this.annotationReplace(options.tags, m)
+    };
+  }
+
+  createAnnotations(options, queryResult) {
+    var res = _.map(queryResult, r => Object.assign({
+      "annotation": {
+        "name": options.annotation.name,
+        "enabled": options.annotation.enable,
+        "datasource": "Timelion",
+      }},
+      this.annotationInfo(options.annotation, r)
+    ));
+    return res;
   }
 
   metricFindQuery(query) {
