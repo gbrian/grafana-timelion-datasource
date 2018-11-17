@@ -1,9 +1,24 @@
-
-<h5 class="section-heading">Query</h5>
 <div class="gf-form-group">
   <div class="gf-form">
-    <input type="text" class="gf-form-input" ng-model='ctrl.annotation.query' placeholder=""></input>
+    <input type="text" class="gf-form-input" ng-model='ctrl.annotation.query' placeholder="" />
+  </div>
+  <div class="gf-form">
+    <label class="gf-form-label width-5">Regexp</label>
+    <input type="text" class="gf-form-input max-width-24 ng-pristine ng-untouched ng-valid ng-empty" placeholder="auto"
+      empty-to-null="" ng-model="ctrl.annotation.regexp">
+    <label class="gf-form-label">Ignore value</label>
+    <input type="text" class="gf-form-input max-width-8 ng-pristine ng-untouched ng-valid ng-empty" placeholder="0"
+      empty-to-null="" ng-model="ctrl.annotation.novalue">
+  </div>
+  <div class="gf-form">
+    <label class="gf-form-label width-5">Title</label>
+    <input type="text" class="gf-form-input max-width-8 ng-pristine ng-untouched ng-valid ng-empty" placeholder="auto"
+      empty-to-null="" ng-model="ctrl.annotation.title">
+    <label class="gf-form-label">Description</label>
+    <input type="text" class="gf-form-input max-width-16 ng-pristine ng-untouched ng-valid ng-empty" placeholder="auto"
+      empty-to-null="" ng-model="ctrl.annotation.text">
+    <label class="gf-form-label">Tags</label>
+    <input type="text" class="gf-form-input max-width-8 ng-pristine ng-untouched ng-valid ng-empty" placeholder="auto"
+      empty-to-null="" ng-model="ctrl.annotation.tags">
   </div>
 </div>
-
-
