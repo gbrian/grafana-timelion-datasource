@@ -79,7 +79,7 @@ export class TimelionDatasource {
       .then(result => this.createAnnotations(options,
         _.reduce(
           _.map(result.data, d =>
-            _.map(_.filter(d.datapoints, d => d[0] !== novalue), dp =>
+            _.map(_.filter(d.datapoints, dd => dd[0] !== novalue), dp =>
               ({
                 target: `${d.target}: ${dp[0]}`,
                 timestamp: dp[1]
