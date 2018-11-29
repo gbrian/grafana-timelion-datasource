@@ -167,7 +167,7 @@ export class TimelionDatasource {
       _.map(Object.keys(options.scopedVars), key =>
         target = target.replace("$" + key, options.scopedVars[key].value));
       return oThis.templateSrv
-        .replace(target, true)
+        .replace(target, true, "lucene")
         .replace(/\r\n|\r|\n/mg, "")
         .trim();
     };
