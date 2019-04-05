@@ -131,8 +131,8 @@ System.register(["lodash"], function (_export, _context) {
             var novalue = parseFloat(options.annotation.novalue || 0);
             return this.query(options).then(function (result) {
               return _this2.createAnnotations(options, _.reduce(_.map(result.data, function (d) {
-                return _.map(_.filter(d.datapoints, function (d) {
-                  return d[0] !== novalue;
+                return _.map(_.filter(d.datapoints, function (dd) {
+                  return dd[0] !== novalue;
                 }), function (dp) {
                   return {
                     target: d.target + ": " + dp[0],
@@ -157,11 +157,13 @@ System.register(["lodash"], function (_export, _context) {
           key: "annotationInfo",
           value: function annotationInfo(options, result) {
             var m = options.regexp ? new RegExp(options.regexp).exec(result.target) : [];
+
+            var tags = this.annotationReplace(options.tags, m);
             return {
-              "title": this.annotationReplace(options.title, m),
-              "time": result.timestamp,
-              "text": this.annotationReplace(options.text, m),
-              "tags": this.annotationReplace(options.tags, m)
+              title: this.annotationReplace(options.title, m),
+              time: result.timestamp,
+              text: this.annotationReplace(options.text, m),
+              tags: tags ? tags.split(',') : null
             };
           }
         }, {

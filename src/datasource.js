@@ -99,13 +99,16 @@ export class TimelionDatasource {
   }
 
   annotationInfo(options, result) {
-    var m = options.regexp ? new RegExp(options.regexp).exec(result.target):
-            [];
+    var m = options.regexp
+      ? new RegExp(options.regexp).exec(result.target)
+      : [];
+
+    const tags = this.annotationReplace(options.tags, m);
     return {
-      "title": this.annotationReplace(options.title, m),
-      "time": result.timestamp,
-      "text": this.annotationReplace(options.text, m),
-      "tags": this.annotationReplace(options.tags, m)
+      title: this.annotationReplace(options.title, m),
+      time: result.timestamp,
+      text: this.annotationReplace(options.text, m),
+      tags: tags ? tags.split(',') : null
     };
   }
 
