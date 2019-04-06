@@ -158,7 +158,8 @@ System.register(["lodash"], function (_export, _context) {
           value: function annotationInfo(options, result) {
             var m = options.regexp ? new RegExp(options.regexp).exec(result.target) : [];
 
-            var tags = this.annotationReplace(options.tags, m);
+            var tags = options.tags && options.tags.length ? this.annotationReplace(options.tags, m).split(',') : null;
+
             return {
               title: this.annotationReplace(options.title, m),
               time: result.timestamp,

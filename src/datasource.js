@@ -103,7 +103,10 @@ export class TimelionDatasource {
       ? new RegExp(options.regexp).exec(result.target)
       : [];
 
-    const tags = this.annotationReplace(options.tags, m);
+    const tags = (options.tags && options.tags.length) ?
+      this.annotationReplace(options.tags, m).split(','):
+      null;
+    
     return {
       title: this.annotationReplace(options.title, m),
       time: result.timestamp,
