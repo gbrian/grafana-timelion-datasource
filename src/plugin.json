@@ -13,16 +13,22 @@
   "info": {
     "description": "simple json datasource",
     "author": {
-      "name": "Raintank Inc.",
-      "url": "http://raintank.io"
+      "name": "Gustavo Brian Núñez Segade",
+      "url": "https://github.com/gbrian"
     },
     "logos": {
       "small": "img/timelion_logo.png",
       "large": "img/timelion_logo.png"
     },
     "links": [
-      {"name": "GitHub", "url": "https://github.com/gbrian/grafana-timelion-datasource"},
-      {"name": "MIT License", "url": "https://github.com/gbrian/grafana-timelion-datasource/blob/master/LICENSE"}
+      {
+        "name": "GitHub",
+        "url": "https://github.com/gbrian/grafana-timelion-datasource"
+      },
+      {
+        "name": "MIT License",
+        "url": "https://github.com/gbrian/grafana-timelion-datasource/blob/master/LICENSE"
+      }
     ],
     "version": "1.3.2",
     "updated": "2017-05-10"
@@ -30,6 +36,6 @@
 
   "dependencies": {
     "grafanaVersion": "4.x.x",
-    "plugins": [ ]
+    "plugins": []
   }
 }
