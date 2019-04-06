@@ -164,7 +164,7 @@ System.register(["lodash"], function (_export, _context) {
               title: this.annotationReplace(options.title, m),
               time: result.timestamp,
               text: this.annotationReplace(options.text, m),
-              tags: tags ? tags.split(',') : null
+              tags: tags
             };
           }
         }, {
