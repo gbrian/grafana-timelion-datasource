@@ -55,7 +55,7 @@ System.register(["lodash"], function (_export, _context) {
           value: function request(options) {
             options.headers = {
               "kbn-version": this.esVersion,
-              "Content-Type": "application/json;charset=UTF-8"
+              "Content-Type": "application/json"
             };
             return this.backendSrv.datasourceRequest(options);
           }
